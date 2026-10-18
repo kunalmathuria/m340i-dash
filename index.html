@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#000000">
 <meta name="mobile-web-app-capable" content="yes">
 <title>M340i Gauges</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
@@ -109,6 +112,7 @@
     <button class="key" id="btnPause" disabled>Pause</button>
     <button class="key" id="btnDtc" disabled>Read codes</button>
     <button class="key" id="btnTrip" disabled>Start trip</button>
+    <button class="key" id="btnInstall" hidden>Install app</button>
   </div>
   <div id="banner" role="status"></div>
 
@@ -352,7 +356,7 @@ async function readLoop() {
       const i = buf.indexOf('>');
       if (i >= 0 && waiting) { const out = buf.slice(0, i); buf = buf.slice(i + 1); const w = waiting; waiting = null; w(out); }
     }
-  } catch (e) { log('read error: ' + e.message); setConn('off', 'LINK LOST'); running = false; }
+  } catch (e) { log('read error: ' + e.message); linkLost('read error'); }
 }
 function send(cmd, timeout = 1500) {
   return new Promise(async res => {
@@ -390,10 +394,17 @@ async function closePort() {
   try { if (port) await port.close(); } catch {}
   writer = null;
 }
-document.getElementById('btnConnect').onclick = async () => {
+let wantLink = false, linking = false;
+async function linkUp(auto) {
   if (!('serial' in navigator)) { banner('This browser cannot reach the adapter. Open this page in Google Chrome (version 138 or newer).'); return; }
   const SPP = '00001101-0000-1000-8000-00805f9b34fb';
-  try {
+  if (auto) {
+    // reopen the adapter the phone already allowed, without the picker
+    const ps = await navigator.serial.getPorts().catch(() => []);
+    const p = ps.includes(port) ? port : ps[0];
+    if (!p) { banner('Link dropped. Tap Connect to relink — the trip is still recording.'); return; }
+    await closePort(); port = p;
+  } else try {
     try { port = await navigator.serial.requestPort({ allowedBluetoothServiceClassIds: [SPP], filters: [{ bluetoothServiceClassId: SPP }] }); }
     catch (e) { if (e.name === 'NotFoundError') throw e; port = await navigator.serial.requestPort({ allowedBluetoothServiceClassIds: [SPP] }); }
   }
@@ -437,9 +448,33 @@ document.getElementById('btnConnect').onclick = async () => {
     document.getElementById('btnPause').disabled = false;
     document.getElementById('btnDtc').disabled = false;
     document.getElementById('btnTrip').disabled = false;
-    running = true; poll();
+    running = true; linkedAt = Date.now(); poll();
   } catch (e) { log('connect failed: ' + e.message); setConn('off', 'OFFLINE'); banner('Connection failed: ' + e.message); await closePort(); }
-};
+}
+document.getElementById('btnConnect').onclick = async () => { wantLink = true; linking = true; try { await linkUp(false); } finally { linking = false; } };
+
+// ---------- auto-relink: when you come back to the app, or every 8 s while the link is down ----------
+async function relink(why) {
+  if (!wantLink || running || linking || document.visibilityState !== 'visible') return;
+  linking = true; log('auto-relink (' + why + ')');
+  try { await linkUp(true); } catch (e) { log('relink failed: ' + e.message); } finally { linking = false; }
+}
+function linkLost(why) {
+  if (!running) return;
+  running = false; log('link lost: ' + why);
+  setConn('off', 'RELINKING…');
+  document.getElementById('btnConnect').disabled = false;
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(() => relink('back in view'), 300); });
+if ('serial' in navigator) navigator.serial.addEventListener('disconnect', e => { if (e.target === port) linkLost('adapter disconnected'); });
+setInterval(() => relink('retry'), 8000);
+// watchdog: if the phone froze the page in the background, the link can look open but be dead
+let linkedAt = 0;
+setInterval(() => {
+  if (!running || paused || linking) return;
+  const last = Math.max(linkedAt, ...Object.values(seen));
+  if (Date.now() - last > 10000) linkLost('no answer for 10 s');
+}, 2000);
 document.getElementById('btnPause').onclick = () => {
   paused = !paused;
   document.getElementById('btnPause').textContent = paused ? 'Resume' : 'Pause';
@@ -506,7 +541,7 @@ async function startTrip() {
   const d = new Date(), pad = n => String(n).padStart(2, '0');
   trip.name = `m340i_trip_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}.csv`;
   trip.fh = null; trip.ws = null;
-  if ('showSaveFilePicker' in window) {
+  if ('showSaveFilePicker' in window && !/Android|Mobi/i.test(navigator.userAgent)) {
     try {
       trip.fh = await window.showSaveFilePicker({ suggestedName: trip.name, startIn: 'documents', types: [{ description: 'CSV', accept: { 'text/csv': ['.csv'] } }] });
       trip.ws = await trip.fh.createWritable();
@@ -516,7 +551,7 @@ async function startTrip() {
   Object.assign(trip, { on: true, t0: Date.now(), lastT: Date.now(), dist: 0, moving: 0, idle: 0, maxSpd: 0, maxRpm: 0, maxOil: null, minVolt: null, rows: [], pending: [] });
   document.getElementById('btnTrip').textContent = 'Stop trip';
   const st = document.getElementById('tripState'); st.textContent = '● REC'; st.classList.add('rec');
-  document.getElementById('tripFile').textContent = trip.ws ? `Recording to ${trip.fh.name} — saved every 5 seconds.` : `Recording on the phone — the CSV saves to Downloads when you stop the trip, and a backup is kept in case the page closes.`;
+  document.getElementById('tripFile').textContent = trip.ws ? `Recording to ${trip.fh.name} — saved every 5 seconds.` : `Recording on the phone — the CSV saves to Downloads when you stop. If you switch apps or the link drops, the trip carries on when you come back.`;
 }
 async function stopTrip() {
   trip.on = false;
@@ -556,8 +591,9 @@ document.getElementById('btnTrip').onclick = () => trip.on ? stopTrip() : startT
 
 setInterval(() => {
   if (!trip.on) return;
-  const now = Date.now(), dt = (now - trip.lastT) / 1000; trip.lastT = now;
-  const fresh = k => seen[k] && now - seen[k] < 5000 ? val[k] : null;
+  const now = Date.now(), dt = Math.min(3, (now - trip.lastT) / 1000); trip.lastT = now;
+  if (!running) return;   // link down: leave a time gap in the log instead of empty rows
+  const fresh = k => seen[k] && now - seen[k] < (k === 'rpm' || k === 'speed' ? 4000 : 15000) ? val[k] : null;
   const spd = fresh('speed'), rpm = fresh('rpm');
   if (spd != null) { trip.dist += spd * dt / 3600; if (spd > 0) trip.moving += dt; trip.maxSpd = Math.max(trip.maxSpd, spd); }
   if (spd === 0 && rpm > 0) trip.idle += dt;
@@ -586,26 +622,56 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 const _setConn = setConn;
 setConn = function (kind, text) { _setConn(kind, text); if (kind === 'on') keepAwake(); };
 
-// ---------- trip backup on the phone (survives the tab being closed) ----------
+// ---------- trip survives switching apps, link drops and the page being reloaded ----------
 const BK = 'm340i_trip_backup';
-function backupTrip() { try { localStorage.setItem(BK, JSON.stringify({ name: trip.name, rows: trip.rows })); } catch {} }
+const KEEP = ['name', 't0', 'lastT', 'dist', 'moving', 'idle', 'maxSpd', 'maxRpm', 'maxOil', 'minVolt', 'rows'];
+function backupTrip() {
+  if (!trip.on || !trip.rows.length) return;
+  const st = { on: true, savedAt: Date.now() }; for (const k of KEEP) st[k] = trip[k];
+  try { localStorage.setItem(BK, JSON.stringify(st)); } catch {}
+}
 function clearBackup() { try { localStorage.removeItem(BK); } catch {} }
-setInterval(() => { if (trip.on && trip.rows.length) backupTrip(); }, 10000);
+setInterval(backupTrip, 3000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') backupTrip(); });
+window.addEventListener('pagehide', backupTrip);
 const _stopTrip = stopTrip;
-stopTrip = async function () { backupTrip(); await _stopTrip(); clearBackup(); };
+stopTrip = async function () { await _stopTrip(); clearBackup(); };
 document.getElementById('btnTrip').onclick = () => trip.on ? stopTrip() : startTrip();
-(function offerRecovery() {
+function saveBackupFile(b) {
+  const csv = TRIP_COLS.join(',') + '\n' + b.rows.join('\n') + '\n';
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = b.name || 'm340i_trip_recovered.csv'; document.body.appendChild(a); a.click(); a.remove();
+}
+(function resumeOrRecover() {
   let b = null; try { b = JSON.parse(localStorage.getItem(BK) || 'null'); } catch {}
   if (!b || !b.rows || !b.rows.length) return;
+  const fresh = b.on && b.t0 && Date.now() - (b.savedAt || 0) < 6 * 3600e3;
+  if (fresh) {
+    // carry on with the same trip
+    for (const k of KEEP) if (b[k] !== undefined) trip[k] = b[k];
+    Object.assign(trip, { on: true, lastT: Date.now(), pending: [], fh: null, ws: null });
+    document.getElementById('btnTrip').textContent = 'Stop trip'; document.getElementById('btnTrip').disabled = false;
+    const st = document.getElementById('tripState'); st.textContent = '● REC'; st.classList.add('rec');
+    const gap = Math.round((Date.now() - b.savedAt) / 1000);
+    document.getElementById('tripFile').textContent = `Trip resumed (${b.rows.length} s logged so far, ${gap} s gap). Tap Connect to relink — recording continues once readings come in.`;
+    wantLink = true; setTimeout(() => relink('resume trip'), 500);
+    return;
+  }
   const btn = document.createElement('button'); btn.className = 'key'; btn.textContent = `Save unsaved trip (${b.rows.length}s)`;
-  btn.onclick = () => {
-    const csv = TRIP_COLS.join(',') + '\n' + b.rows.join('\n') + '\n';
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    a.download = b.name || 'm340i_trip_recovered.csv'; document.body.appendChild(a); a.click(); a.remove();
-    clearBackup(); btn.remove();
-  };
+  btn.onclick = () => { saveBackupFile(b); clearBackup(); btn.remove(); };
   document.querySelector('.top').appendChild(btn);
 })();
+
+// ---------- installable app (full screen, no browser bar) ----------
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+let installEvt = null;
+const standalone = () => matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if (!standalone()) document.getElementById('btnInstall').hidden = false; });
+document.getElementById('btnInstall').onclick = async () => {
+  if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null;
+  document.getElementById('btnInstall').hidden = true;
+};
+window.addEventListener('appinstalled', () => { document.getElementById('btnInstall').hidden = true; });
 
 // ---------- classic cluster behaviour: sweep on link-up, needles rest at zero when offline ----------
 let wasOn = false;
@@ -613,6 +679,8 @@ const _setConn2 = setConn;
 setConn = function (kind, text) {
   _setConn2(kind, text);
   if (kind === 'on' && !wasOn) sweep();
+  const tf = document.getElementById('tripFile');
+  if (kind === 'on' && trip.on && /^Trip resumed/.test(tf.textContent)) tf.textContent = `Trip resumed and relinked — still recording (${trip.rows.length} s so far).`;
   if (kind === 'off') { for (const g of gauges) g.target = g.c.a0; tach.dig.textContent = '---'; speedo.dig.textContent = '---'; }
   wasOn = kind === 'on' || (kind === 'busy' && wasOn);
 };
