@@ -3,149 +3,106 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#040404">
+<meta name="theme-color" content="#000000">
 <meta name="mobile-web-app-capable" content="yes">
-<title>M340i Telemetry</title>
+<title>M340i Gauges</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: dark;
-    --void: #040404; --panel: #0d0b0a; --panel-2: #141110; --edge: #2a2320; --edge-hi: #3b312c;
-    --red: #ff3b25;  --red-dim: #3a100b;  --red-glow: rgba(255,59,37,.55);
-    --amber: #ffb300; --amber-dim: #3b2a05; --amber-glow: rgba(255,179,0,.5);
-    --green: #3dff7a; --green-dim: #0d3319; --green-glow: rgba(61,255,122,.45);
-    --ink: #f3ece6; --ink-2: #a89c93; --muted: #6d625b;
-    --digits: "Share Tech Mono", Consolas, "Courier New", monospace;
-    --labels: "Rajdhani", "Segoe UI", system-ui, sans-serif;
+    --black: #000; --face: #0b0b0c; --rim: #1c1c1f;
+    --ink: #f2ede3; --ink-2: #a8a39a; --muted: #6b675f;
+    --needle: #ff5a1f; --needle-glow: rgba(255,90,31,.55);
+    --red: #e3261b; --amber: #ffb000; --green: #3ccf6e;
+    --lcd: #ffb347; --lcd-dim: #3a2a12;
+    --sans: "Barlow Semi Condensed", "Segoe UI", system-ui, sans-serif;
+    --mono: "Share Tech Mono", Consolas, monospace;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: radial-gradient(1200px 600px at 50% -10%, #1a1210 0%, var(--void) 60%); color: var(--ink);
-         font: 15px/1.4 var(--labels); min-height: 100vh; }
-  .wrap { max-width: 1240px; margin: 0 auto; padding: 22px 20px 36px; }
+  html, body { margin: 0; background: var(--black); color: var(--ink); font: 15px/1.4 var(--sans); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: max(14px, env(safe-area-inset-top)) 14px 32px; }
 
   /* top bar */
-  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-bottom: 18px; }
-  .brand { font-weight: 700; letter-spacing: .28em; text-transform: uppercase; font-size: 15px; color: var(--ink); }
-  .brand small { display: block; letter-spacing: .12em; font-weight: 500; color: var(--muted); font-size: 12px; text-transform: none; }
+  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 14px; }
+  .brand { font-weight: 600; letter-spacing: .3em; text-transform: uppercase; font-size: 14px; }
+  .brand small { display: block; letter-spacing: .08em; font-weight: 400; color: var(--muted); font-size: 12px; text-transform: none; }
   .spacer { flex: 1; }
-  .key { font: 600 13px var(--labels); letter-spacing: .14em; text-transform: uppercase; cursor: pointer;
-         padding: 9px 14px; border-radius: 4px; border: 1px solid var(--edge-hi); color: var(--ink-2);
-         background: linear-gradient(#1b1715, #0f0d0c); box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }
-  .key:hover:not(:disabled) { color: var(--ink); border-color: #55463f; }
-  .key.go { color: #fff; border-color: #7a1c12; background: linear-gradient(#b8291a, #7e170d); box-shadow: 0 0 14px var(--red-glow), inset 0 1px 0 rgba(255,255,255,.18); }
-  .key:disabled { opacity: .4; cursor: default; }
-  .key:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
-  .link { display: inline-flex; align-items: center; gap: 8px; font: 13px var(--digits); color: var(--ink-2); letter-spacing: .06em; }
-  .lamp-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red-dim); border: 1px solid #000; }
-  .lamp-dot.on { background: var(--green); box-shadow: 0 0 10px var(--green-glow); }
-  .lamp-dot.busy { background: var(--amber); box-shadow: 0 0 10px var(--amber-glow); }
+  .link { display: inline-flex; align-items: center; gap: 8px; font: 13px var(--mono); color: var(--ink-2); }
+  .lamp-dot { width: 9px; height: 9px; border-radius: 50%; background: #2a0b08; }
+  .lamp-dot.on { background: var(--green); box-shadow: 0 0 8px rgba(60,207,110,.6); }
+  .lamp-dot.busy { background: var(--amber); box-shadow: 0 0 8px rgba(255,176,0,.6); }
+  .key { font: 600 13px var(--sans); letter-spacing: .16em; text-transform: uppercase; cursor: pointer; color: var(--ink-2);
+         padding: 10px 14px; border-radius: 6px; border: 1px solid #2c2b2e; background: linear-gradient(#18181a, #0c0c0d); }
+  .key.go { color: #fff; border-color: #8a2a12; background: linear-gradient(#c8401a, #8f2810); }
+  .key:disabled { opacity: .35; cursor: default; }
+  .key:focus-visible { outline: 2px solid var(--needle); outline-offset: 2px; }
 
-  /* bezel panels */
-  .bezel { background: linear-gradient(180deg, var(--panel-2), var(--panel)); border: 1px solid var(--edge);
-           border-radius: 10px; box-shadow: inset 0 0 0 1px #000, inset 0 2px 0 rgba(255,255,255,.03), 0 12px 30px rgba(0,0,0,.5);
-           padding: 16px 18px; position: relative; }
-  .tag { font: 600 12px var(--labels); letter-spacing: .22em; text-transform: uppercase; color: var(--ink-2); display: flex; justify-content: space-between; }
-  .tag .age { font-family: var(--digits); letter-spacing: .04em; color: var(--muted); text-transform: none; }
+  #banner { display: none; border: 1px solid transparent; margin: 0 0 14px; padding: 12px 14px; border-radius: 6px; font: 500 14px var(--sans); }
 
-  /* digital readout with ghost segments */
-  .readout { position: relative; font-family: var(--digits); line-height: 1; white-space: nowrap; }
-  .readout .digits { position: relative; display: inline-block; white-space: pre; }
-  .readout .ghost { color: #1e1714; position: absolute; left: 0; top: 0; pointer-events: none; white-space: pre; }
-  .readout .live { position: relative; white-space: pre; }
-  .readout .unit { font: 600 14px var(--labels); letter-spacing: .18em; color: var(--ink-2); margin-left: 8px; text-transform: uppercase; }
-  .red    .live { color: var(--red);   text-shadow: 0 0 12px var(--red-glow); }
-  .amber  .live { color: var(--amber); text-shadow: 0 0 12px var(--amber-glow); }
-  .green  .live { color: var(--green); text-shadow: 0 0 12px var(--green-glow); }
+  /* gauge pods */
+  .pods { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .pod { position: relative; }
+  .pod svg { display: block; width: 100%; height: auto; }
+  .smalls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+  .small { text-align: center; }
+  .small .val { font: 500 18px var(--mono); color: var(--ink); margin-top: -4px; }
+  .small .val .u { font: 500 12px var(--sans); color: var(--ink-2); margin-left: 3px; letter-spacing: .08em; }
+  .age { font: 11px var(--mono); color: var(--muted); }
+  .pod .age { position: absolute; top: 6px; right: 8px; }
 
-  /* main cluster */
-  .cluster { display: grid; grid-template-columns: 1.65fr 1fr; gap: 16px; }
-  .speed .readout { font-size: 132px; margin: 6px 0 2px; }
-  .rpm-row { display: flex; align-items: baseline; justify-content: space-between; margin-top: 10px; }
-  #r-rpm { font-size: 88px; margin-top: 4px; }
-  .bar { display: grid; gap: 3px; margin-top: 10px; }
-  .bar.h { grid-auto-flow: column; grid-auto-columns: 1fr; height: 46px; }
-  .seg { border-radius: 2px; background: var(--green-dim); transition: background .08s, box-shadow .08s; }
-  .seg.a { background: var(--amber-dim); }
-  .seg.r { background: var(--red-dim); }
-  .seg.lit   { background: var(--green); box-shadow: 0 0 8px var(--green-glow); }
-  .seg.a.lit { background: var(--amber); box-shadow: 0 0 8px var(--amber-glow); }
-  .seg.r.lit { background: var(--red);   box-shadow: 0 0 10px var(--red-glow); }
-  .scale { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; font: 12px var(--digits); color: var(--muted); margin-top: 6px; }
-  .scale span:last-child { text-align: right; }
+  /* telltales */
+  .tells { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 16px; }
+  .wlamp { display: flex; flex-direction: column; align-items: center; gap: 6px; font: 600 11px var(--sans);
+           letter-spacing: .1em; text-transform: uppercase; color: var(--muted); text-align: center; }
+  .wlamp::before { content: ""; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #222, #0a0a0a);
+                   border: 1px solid #262626; }
+  .wlamp.warn { color: var(--amber); } .wlamp.warn::before { background: radial-gradient(circle at 35% 30%, #ffe08a, var(--amber)); box-shadow: 0 0 14px rgba(255,176,0,.7); }
+  .wlamp.crit { color: #ff6b5e; } .wlamp.crit::before { background: radial-gradient(circle at 35% 30%, #ff8b80, var(--red)); box-shadow: 0 0 16px rgba(227,38,27,.8); }
+  .wlamp.ok::before { background: radial-gradient(circle at 35% 30%, #13301d, #07120b); border-color: #173322; }
+  .tellnote { text-align: center; font-size: 12px; color: var(--muted); margin-top: 8px; }
 
-  .side { display: grid; grid-template-rows: auto auto; align-content: start; gap: 16px; }
-  .lamps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
-  .wlamp { font: 700 12px var(--labels); letter-spacing: .14em; text-transform: uppercase; text-align: center;
-           padding: 10px 6px; border-radius: 4px; border: 1px solid #000; color: #3d322d; background: #120f0e;
-           box-shadow: inset 0 0 0 1px #221c19; display: flex; align-items: center; justify-content: center; gap: 6px; }
-  .wlamp.warn { color: #1a1000; background: var(--amber); box-shadow: 0 0 16px var(--amber-glow); }
-  .wlamp.crit { color: #fff; background: var(--red); box-shadow: 0 0 18px var(--red-glow); }
-  .wlamp.ok { color: #2f9a55; background: #0c1610; box-shadow: inset 0 0 0 1px #173322; }
-  .mini { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .mini .readout { font-size: 38px; margin-top: 6px; }
-
-  /* column gauges */
-  .cols { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-top: 16px; }
-  .col { display: flex; flex-direction: column; }
-  .col .bar.v { grid-template-rows: repeat(20, 1fr); height: 170px; width: 46px; margin: 12px auto 8px; }
-  .col .readout { font-size: 30px; text-align: center; }
-  .col .readout .unit { display: block; margin: 6px 0 0; font-size: 12px; }
-  .col .note { text-align: center; font: 600 12px var(--labels); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); min-height: 16px; margin-top: 4px; }
-
-  .lower { display: grid; grid-template-columns: 1fr 1.3fr; gap: 16px; margin-top: 16px; }
-  .codes { font: 15px var(--digits); color: var(--ink); margin-top: 10px; }
-  .codes .sub { color: var(--muted); font-size: 12px; }
-  .stats { display: flex; gap: 18px; font: 12px var(--digits); color: var(--ink-2); margin-top: 10px; }
-  pre.log { margin: 10px 0 0; height: 150px; overflow: auto; font: 12px/1.5 var(--digits); color: #c86a5a; white-space: pre-wrap; }
-  .trip { display: grid; grid-template-columns: repeat(8, 1fr); gap: 12px; margin-top: 12px; }
-  .trip > div { border-left: 1px solid var(--edge); padding-left: 12px; }
-  .trip > div:first-child { border-left: 0; padding-left: 0; }
-  .trip .k { display: block; font: 600 11px var(--labels); letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
-  .trip .v { font: 26px var(--digits); color: var(--amber); text-shadow: 0 0 10px var(--amber-glow); }
-  .trip .u { font: 600 11px var(--labels); letter-spacing: .14em; color: var(--ink-2); margin-left: 4px; text-transform: uppercase; }
+  /* info strip + trip computer: vintage amber display */
+  .panel { background: #050505; border: 1px solid #1d1d1f; border-radius: 10px; padding: 14px 16px; margin-top: 16px; }
+  .panel h2 { margin: 0; font: 600 12px var(--sans); letter-spacing: .26em; text-transform: uppercase; color: var(--ink-2);
+              display: flex; justify-content: space-between; align-items: baseline; }
+  .strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .cell .k { display: block; font: 600 11px var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  .cell .v { font: 24px var(--mono); color: var(--lcd); text-shadow: 0 0 10px rgba(255,179,71,.35); }
+  .cell .u { font: 600 11px var(--sans); color: var(--ink-2); margin-left: 4px; letter-spacing: .1em; text-transform: uppercase; }
+  .trip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 10px; margin-top: 12px; }
   .tripnote { font-size: 13px; color: var(--muted); margin-top: 10px; }
-  #tripState.rec { color: var(--red); text-shadow: 0 0 8px var(--red-glow); }
-  @media (max-width: 980px) { .trip { grid-template-columns: repeat(4, 1fr); } .trip > div:nth-child(5) { border-left: 0; padding-left: 0; } }
-  .foot { font-size: 13px; color: var(--muted); margin-top: 16px; max-width: 80ch; letter-spacing: .02em; }
+  #tripState.rec { color: var(--red); text-shadow: 0 0 8px rgba(227,38,27,.6); }
+  .codes { font: 15px var(--mono); margin-top: 10px; }
+  .codes .sub { color: var(--muted); font-size: 12px; }
+  .stats { font: 12px var(--mono); color: var(--ink-2); margin-top: 8px; }
+  details.panel summary { cursor: pointer; font: 600 12px var(--sans); letter-spacing: .26em; text-transform: uppercase; color: var(--ink-2); }
+  pre.log { margin: 10px 0 0; max-height: 160px; overflow: auto; font: 12px/1.5 var(--mono); color: #c98c6e; white-space: pre-wrap; }
+  .foot { font-size: 13px; color: var(--muted); margin-top: 16px; }
 
-  @media (max-width: 980px) { .cluster, .lower { grid-template-columns: 1fr; } .cols { grid-template-columns: repeat(3, 1fr); } .speed .readout { font-size: 104px; } }
-  /* phone (Fold outer screen) */
+  @media (max-width: 1000px) {
+    .brand { flex: 1 1 100%; }
+    .spacer { display: none; }
+    .link { flex: 1 1 100%; }
+    .key { flex: 1 1 0; }
+  }
   @media (max-width: 640px) {
-    .wrap { padding: max(12px, env(safe-area-inset-top)) 12px 28px; }
-    .top { gap: 8px; margin-bottom: 12px; }
-    .brand { font-size: 13px; letter-spacing: .2em; width: 100%; }
+    .wrap { padding-left: 10px; padding-right: 10px; }
+    .brand { width: 100%; }
     .spacer { display: none; }
     .link { width: 100%; }
-    .key { flex: 1 1 calc(50% - 8px); padding: 14px 8px; font-size: 13px; }
-    .bezel { padding: 12px 14px; }
-    .speed .readout { font-size: 92px; }
-    #r-rpm { font-size: 60px; }
-    .bar.h { height: 36px; gap: 2px; }
-    .cluster { gap: 12px; }
-    .side { gap: 12px; }
-    .lamps { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .wlamp { font-size: 11px; letter-spacing: .08em; padding: 9px 4px; }
-    .mini .readout { font-size: 32px; }
-    .cols { grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
-    .col .bar.v { height: 110px; width: 34px; margin: 8px auto 6px; }
-    .col .readout { font-size: 24px; }
-    .col .note { font-size: 10px; letter-spacing: .06em; }
-    .tag { font-size: 11px; letter-spacing: .16em; }
-    .col .tag { flex-direction: column; gap: 2px; }
-    .trip { grid-template-columns: repeat(4, 1fr); gap: 10px 8px; }
-    .trip > div:nth-child(5) { border-left: 0; padding-left: 0; }
-    .trip .v { font-size: 20px; }
-    .lower { gap: 12px; margin-top: 12px; }
-    pre.log { height: 110px; }
+    .key { flex: 1 1 calc(50% - 6px); padding: 13px 6px; }
+    .tells { grid-template-columns: repeat(3, 1fr); row-gap: 12px; }
+    .strip, .trip { grid-template-columns: repeat(2, 1fr); }
+    .smalls { grid-template-columns: repeat(2, 1fr); }
   }
-  @media (prefers-reduced-motion: reduce) { .seg { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .key { transition: none; } }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="top">
-    <div class="brand">M340i telemetry<small>Read-only OBD-II · live from the car</small></div>
+    <div class="brand">M340i gauges<small>Read-only OBD-II · live from the car</small></div>
     <div class="spacer"></div>
     <span class="link"><span class="lamp-dot" id="dot"></span><span id="connText">OFFLINE</span></span>
     <button class="key go" id="btnConnect">Connect</button>
@@ -153,81 +110,71 @@
     <button class="key" id="btnDtc" disabled>Read codes</button>
     <button class="key" id="btnTrip" disabled>Start trip</button>
   </div>
+  <div id="banner" role="status"></div>
 
-  <div id="banner" role="status" style="display:none;margin:-4px 0 16px;padding:12px 16px;border-radius:6px;border:1px solid #7a1c12;background:#2a0d09;color:#ffd9d2;font:600 14px var(--labels);letter-spacing:.04em"></div>
+  <section class="pods">
+    <div class="pod"><span class="age" data-age="rpm"></span><div id="g-tach"></div></div>
+    <div class="pod"><span class="age" data-age="speed"></span><div id="g-speed"></div></div>
+  </section>
 
-  <section class="cluster">
-    <div class="bezel speed">
-      <div class="tag"><span>Road speed</span><span class="age" data-age="speed"></span></div>
-      <div class="readout red" id="r-speed"><span class="digits"><span class="ghost">888</span><span class="live">---</span></span><span class="unit">km/h</span></div>
-      <div class="rpm-row">
-        <div class="tag" style="flex:1"><span>Engine speed</span><span class="age" data-age="rpm"></span></div>
-      </div>
-      <div class="readout amber" id="r-rpm"><span class="digits"><span class="ghost">8888</span><span class="live">----</span></span><span class="unit">rpm</span></div>
-      <div class="bar h" id="bar-rpm" aria-hidden="true"></div>
-      <div class="scale"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7 ×1000</span></div>
-    </div>
+  <section class="smalls">
+    <div class="small"><div id="g-coolant"></div><div class="val"><span id="v-coolant">--</span><span class="u">°C coolant</span></div></div>
+    <div class="small"><div id="g-oil"></div><div class="val"><span id="v-oil">--</span><span class="u">°C oil</span></div></div>
+    <div class="small"><div id="g-fuel"></div><div class="val"><span id="v-fuel">--</span><span class="u">% fuel</span></div></div>
+    <div class="small"><div id="g-volt"></div><div class="val"><span id="v-volt">--</span><span class="u">V battery</span></div></div>
+  </section>
 
-    <div class="side">
-      <div class="bezel">
-        <div class="tag"><span>Warning lamps</span><span class="age" id="lampAge"></span></div>
-        <div class="lamps" id="lamps">
-          <div class="wlamp" data-lamp="mil">Check engine</div>
-          <div class="wlamp" data-lamp="charge">Charging</div>
-          <div class="wlamp" data-lamp="coolant">Coolant temp</div>
-          <div class="wlamp" data-lamp="oil">Oil temp</div>
-          <div class="wlamp" data-lamp="fuel">Low fuel</div>
-          <div class="wlamp" data-lamp="codes">Fault codes</div>
-        </div>
-      </div>
-      <div class="bezel mini">
-        <div>
-          <div class="tag"><span>Intake air</span></div>
-          <div class="readout green" id="r-iat"><span class="digits"><span class="ghost">888</span><span class="live">--</span></span><span class="unit">°C</span></div>
-        </div>
-        <div>
-          <div class="tag"><span>Outside</span></div>
-          <div class="readout green" id="r-ambient"><span class="digits"><span class="ghost">888</span><span class="live">--</span></span><span class="unit">°C</span></div>
-        </div>
-      </div>
+  <section class="tells" aria-label="Warning lamps">
+    <div class="wlamp" data-lamp="mil">Check engine</div>
+    <div class="wlamp" data-lamp="charge">Charging</div>
+    <div class="wlamp" data-lamp="coolant">Coolant</div>
+    <div class="wlamp" data-lamp="oil">Oil temp</div>
+    <div class="wlamp" data-lamp="fuel">Low fuel</div>
+    <div class="wlamp" data-lamp="codes">Fault codes</div>
+  </section>
+  <div class="tellnote">Lamps stay dark when all is well and light up amber or red if something needs attention.</div>
+
+  <section class="panel">
+    <div class="strip">
+      <div class="cell"><span class="k">Intake air</span><span class="v" id="v-iat">--</span><span class="u">°C</span></div>
+      <div class="cell"><span class="k">Outside</span><span class="v" id="v-ambient">--</span><span class="u">°C</span></div>
+      <div class="cell"><span class="k">Engine load</span><span class="v" id="v-load">--</span><span class="u">%</span></div>
+      <div class="cell"><span class="k">Throttle</span><span class="v" id="v-throttle">--</span><span class="u">%</span></div>
     </div>
   </section>
 
-  <section class="cols" id="cols"></section>
-
-  <section class="bezel" id="tripPanel" style="margin-top:16px">
-    <div class="tag"><span>Trip log</span><span class="age" id="tripState">NOT RECORDING</span></div>
-    <div class="trip" id="tripStats">
-      <div><span class="k">Time</span><span class="v" id="ts-time">--:--</span></div>
-      <div><span class="k">Distance</span><span class="v" id="ts-dist">--</span><span class="u">km</span></div>
-      <div><span class="k">Avg speed</span><span class="v" id="ts-avg">--</span><span class="u">km/h</span></div>
-      <div><span class="k">Top speed</span><span class="v" id="ts-max">--</span><span class="u">km/h</span></div>
-      <div><span class="k">Peak rpm</span><span class="v" id="ts-rpm">--</span></div>
-      <div><span class="k">Idle</span><span class="v" id="ts-idle">--</span></div>
-      <div><span class="k">Max oil</span><span class="v" id="ts-oil">--</span><span class="u">°C</span></div>
-      <div><span class="k">Min volt</span><span class="v" id="ts-volt">--</span><span class="u">V</span></div>
+  <section class="panel" id="tripPanel">
+    <h2><span>Trip computer</span><span class="age" id="tripState">NOT RECORDING</span></h2>
+    <div class="trip">
+      <div class="cell"><span class="k">Time</span><span class="v" id="ts-time">--:--</span></div>
+      <div class="cell"><span class="k">Distance</span><span class="v" id="ts-dist">--</span><span class="u">km</span></div>
+      <div class="cell"><span class="k">Avg speed</span><span class="v" id="ts-avg">--</span><span class="u">km/h</span></div>
+      <div class="cell"><span class="k">Top speed</span><span class="v" id="ts-max">--</span><span class="u">km/h</span></div>
+      <div class="cell"><span class="k">Peak rpm</span><span class="v" id="ts-rpm">--</span></div>
+      <div class="cell"><span class="k">Idle</span><span class="v" id="ts-idle">--</span></div>
+      <div class="cell"><span class="k">Max oil</span><span class="v" id="ts-oil">--</span><span class="u">°C</span></div>
+      <div class="cell"><span class="k">Min volt</span><span class="v" id="ts-volt">--</span><span class="u">V</span></div>
     </div>
-    <div class="tripnote" id="tripFile">Records one row per second. On the phone the CSV saves to Downloads when you stop, and a backup is kept if the page closes mid-trip.</div>
+    <div class="tripnote" id="tripFile">Records one row per second. The CSV saves to Downloads when you stop, and a backup is kept if the page closes mid-trip.</div>
   </section>
 
-  <section class="lower">
-    <div class="bezel">
-      <div class="tag"><span>Fault codes</span></div>
-      <div class="codes" id="dtcs">NOT READ <span class="sub">— codes are only read, never cleared</span></div>
-      <div class="stats" id="stats"></div>
-    </div>
-    <div class="bezel">
-      <div class="tag"><span>Adapter log</span></div>
-      <pre class="log" id="log"></pre>
-    </div>
+  <section class="panel">
+    <h2><span>Fault codes</span></h2>
+    <div class="codes" id="dtcs">NOT READ <span class="sub">— codes are only read, never cleared</span></div>
+    <div class="stats" id="stats"></div>
   </section>
 
-  <p class="foot">First time: pair the OBDLink MX+ in Android Settings → Bluetooth (press the button on the MX+). Then tap Connect and choose the MX+.
-  The screen stays on while connected. Close BimmerCode first — only one app can use the MX+ at a time. Nothing on this page writes to the car.</p>
+  <details class="panel">
+    <summary>Adapter log</summary>
+    <pre class="log" id="log"></pre>
+  </details>
+
+  <p class="foot">First time: pair the OBDLink MX+ in Android Settings → Connected devices (press the button on the MX+). Then tap Connect and choose the MX+.
+  The screen stays on while connected. Close BimmerCode first — only one app can use the MX+ at a time. Nothing here writes to the car.</p>
 </div>
 
 <script>
-// ---------- data definitions ----------
+// ---------- data ----------
 const PIDS = [
   { id: 'rpm',      pid: '0C', n: 2, f: b => (b[0]*256 + b[1]) / 4 },
   { id: 'speed',    pid: '0D', n: 1, f: b => b[0] },
@@ -239,83 +186,134 @@ const PIDS = [
   { id: 'throttle', pid: '11', n: 1, f: b => b[0] * 100 / 255 },
   { id: 'iat',      pid: '0F', n: 1, f: b => b[0] - 40 },
   { id: 'ambient',  pid: '46', n: 1, f: b => b[0] - 40 },
-  { id: 'mil',      pid: '01', n: 1, f: b => b[0] },          // bit 7 = check-engine lamp, bits 0-6 = code count
+  { id: 'mil',      pid: '01', n: 1, f: b => b[0] },
 ];
 const byId = Object.fromEntries(PIDS.map(p => [p.id, p]));
 const val = {}, seen = {};
 
-// column gauges: [id, label, unit, min, max, amberAt, redAt, decimals, note(v)]
-const COLS = [
-  ['coolant',  'Coolant',  '°C',  40, 130, 108, 115, 0, v => v < 70 ? 'Warming' : v >= 115 ? 'Overheat' : v >= 108 ? 'Hot' : 'Normal'],
-  ['oil',      'Oil',      '°C',  40, 150, 125, 135, 0, v => v < 80 ? 'Cold — go easy' : v >= 135 ? 'Very hot' : 'Ready'],
-  ['volt',     'Battery',  'V',   11.5, 15.5, null, null, 1, v => v < 12 ? 'Low' : v < 13 ? 'Not charging' : v > 15 ? 'High' : 'Charging'],
-  ['fuel',     'Fuel',     '%',    0, 100, null, null, 0, v => v < 12 ? 'Low' : ''],
-  ['load',     'Load',     '%',    0, 100, 70, 90, 0, () => ''],
-  ['throttle', 'Throttle', '%',    0, 100, 70, 90, 0, () => ''],
-];
-const SEGS = 20;
-
-// ---------- build gauges ----------
-function buildBar(el, count, zoneOf) {
-  el.innerHTML = '';
-  for (let i = 0; i < count; i++) { const s = document.createElement('div'); s.className = 'seg ' + zoneOf(i); el.appendChild(s); }
-  return [...el.children];
+// ---------- analog dial builder ----------
+const NS = 'http://www.w3.org/2000/svg';
+const rad = d => (d - 90) * Math.PI / 180;               // 0deg = 12 o'clock, clockwise
+const pt = (cx, cy, r, d) => [cx + r * Math.cos(rad(d)), cy + r * Math.sin(rad(d))];
+function arc(cx, cy, r, a0, a1) {
+  const [x0, y0] = pt(cx, cy, r, a0), [x1, y1] = pt(cx, cy, r, a1);
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
 }
-const RPM_SEGS = 42, RPM_MAX = 7000;
-const rpmSegs = buildBar(document.getElementById('bar-rpm'), RPM_SEGS, i => {
-  const r = (i + 1) / RPM_SEGS * RPM_MAX; return r > 5800 ? 'r' : r > 4500 ? 'a' : '';
+let uid = 0;
+function dial(el, c) {
+  // c: {min,max,a0,a1,major,minor,label(v),zones:[[from,to,color]],title,sub,big,cx,cy,r,vb}
+  const id = 'd' + (uid++);
+  const { cx, cy, r } = c;
+  const ang = v => c.a0 + (Math.max(c.min, Math.min(c.max, v)) - c.min) / (c.max - c.min) * (c.a1 - c.a0);
+  let s = `<svg viewBox="${c.vb}" role="img" aria-label="${c.aria || c.title}">
+  <defs>
+    <linearGradient id="${id}chrome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e9e9ea"/><stop offset=".22" stop-color="#7d7d80"/><stop offset=".5" stop-color="#2b2b2e"/>
+      <stop offset=".78" stop-color="#8a8a8d"/><stop offset="1" stop-color="#f4f4f4"/>
+    </linearGradient>
+    <radialGradient id="${id}face" cx=".5" cy=".42" r=".65">
+      <stop offset="0" stop-color="#17171a"/><stop offset=".75" stop-color="#0a0a0b"/><stop offset="1" stop-color="#000"/>
+    </radialGradient>
+    <linearGradient id="${id}glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".09"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="${id}hub" cx=".4" cy=".35" r=".7">
+      <stop offset="0" stop-color="#9a9a9e"/><stop offset=".6" stop-color="#2a2a2d"/><stop offset="1" stop-color="#0c0c0d"/>
+    </radialGradient>
+  </defs>
+  <circle cx="${cx}" cy="${cy}" r="${r + 7}" fill="url(#${id}chrome)"/>
+  <circle cx="${cx}" cy="${cy}" r="${r + 2.5}" fill="#000"/>
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id}face)"/>`;
+  for (const [f, t, col] of (c.zones || [])) s += `<path d="${arc(cx, cy, r * .9, ang(f), ang(t))}" stroke="${col}" stroke-width="${r * .055}" fill="none"/>`;
+  // ticks
+  const steps = Math.round((c.max - c.min) / c.minor);
+  for (let i = 0; i <= steps; i++) {
+    const v = c.min + i * c.minor, a = ang(v);
+    const isMajor = Math.abs((v - c.min) / c.major - Math.round((v - c.min) / c.major)) < 1e-6;
+    const half = !isMajor && c.half && Math.abs((v - c.min) / (c.major / 2) - Math.round((v - c.min) / (c.major / 2))) < 1e-6;
+    const r1 = r * .93, r0 = r * (isMajor ? .79 : half ? .845 : .875);
+    const [x0, y0] = pt(cx, cy, r0, a), [x1, y1] = pt(cx, cy, r1, a);
+    s += `<line x1="${x0.toFixed(2)}" y1="${y0.toFixed(2)}" x2="${x1.toFixed(2)}" y2="${y1.toFixed(2)}" stroke="${c.tickColor ? c.tickColor(v) : '#f2ede3'}" stroke-width="${isMajor ? r * .028 : r * .012}" stroke-linecap="butt"/>`;
+    if (isMajor && c.label) {
+      const txt = c.label(v); if (txt === null) continue;
+      const [tx, ty] = pt(cx, cy, r * (c.numR || .64), a);
+      s += `<text x="${tx.toFixed(2)}" y="${ty.toFixed(2)}" fill="${c.tickColor ? c.tickColor(v) : '#f2ede3'}" font-family="Barlow Semi Condensed, sans-serif" font-weight="600" font-size="${r * (c.numSize || .17)}" text-anchor="middle" dominant-baseline="central">${txt}</text>`;
+    }
+  }
+  if (c.title) s += `<text x="${cx}" y="${cy + r * (c.titleY || .36)}" fill="#a8a39a" font-family="Barlow Semi Condensed, sans-serif" font-weight="600" font-size="${r * .085}" letter-spacing="${r * .02}" text-anchor="middle">${c.title}</text>`;
+  if (c.sub) s += `<text x="${cx}" y="${cy - r * .3}" fill="#6b675f" font-family="Barlow Semi Condensed, sans-serif" font-weight="500" font-size="${r * .075}" letter-spacing="${r * .015}" text-anchor="middle">${c.sub}</text>`;
+  if (c.digital) s += `<rect x="${cx - r * .25}" y="${cy + r * .5}" width="${r * .5}" height="${r * .2}" rx="${r * .03}" fill="#040404" stroke="#1f1f21"/>
+     <text id="${id}dig" x="${cx}" y="${cy + r * .6}" fill="#ffb347" font-family="Share Tech Mono, monospace" font-size="${r * .14}" text-anchor="middle" dominant-baseline="central">---</text>`;
+  // needle
+  const L = r * (c.needleLen || .86), w = r * (c.big ? .03 : .045), tail = r * .18;
+  s += `<g id="${id}n" transform="rotate(${c.a0} ${cx} ${cy})" style="filter: drop-shadow(0 0 ${r * .03}px rgba(255,90,31,.55))">
+     <polygon points="${cx - w},${cy + tail} ${cx + w},${cy + tail} ${cx + w * .32},${cy - L} ${cx - w * .32},${cy - L}" fill="#ff5a1f"/>
+   </g>
+   <circle cx="${cx}" cy="${cy}" r="${r * (c.big ? .095 : .13)}" fill="url(#${id}hub)" stroke="#000" stroke-width="1"/>
+   <circle cx="${cx}" cy="${cy}" r="${r + 1}" fill="url(#${id}glass)" pointer-events="none"/>
+  </svg>`;
+  el.innerHTML = s;
+  const needle = el.querySelector(`#${id}n`), dig = el.querySelector(`#${id}dig`), svg = el.querySelector('svg');
+  // spring-damped needle: moves like a real gauge between readings
+  const g = { pos: c.a0, vel: 0, target: c.a0, ang, needle, dig, svg, cx, cy, c, k: c.k || 90, z: c.zeta || .78 };
+  gauges.push(g);
+  return g;
+}
+const gauges = [];
+let lastFrame = performance.now();
+function frame(now) {
+  const dt = Math.min(.05, (now - lastFrame) / 1000); lastFrame = now;
+  for (const g of gauges) {
+    const k = g.k, c = 2 * g.z * Math.sqrt(k);
+    g.vel += (k * (g.target - g.pos) - c * g.vel) * dt;
+    g.pos += g.vel * dt;
+    g.needle.setAttribute('transform', `rotate(${g.pos.toFixed(2)} ${g.cx} ${g.cy})`);
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+function point(g, v) { g.target = g.ang(v); }
+
+// ---------- build the cluster ----------
+const tach = dial(document.getElementById('g-tach'), {
+  vb: '0 0 220 220', cx: 110, cy: 110, r: 100, big: true, min: 0, max: 7000, a0: -125, a1: 125,
+  major: 1000, minor: 250, half: true, label: v => v / 1000,
+  zones: [[6000, 6500, '#ffb000'], [6500, 7000, '#e3261b']],
+  tickColor: v => v >= 6500 ? '#ff4a3d' : '#f2ede3',
+  title: '1/min × 1000', titleY: .33, digital: true, k: 140, zeta: .72,
 });
-const colWrap = document.getElementById('cols');
-const colSegs = {};
-for (const [id, label, unit, min, max, amberAt, redAt, dec] of COLS) {
-  const d = document.createElement('div'); d.className = 'bezel col';
-  d.innerHTML = `<div class="tag"><span>${label}</span><span class="age" data-age="${id}"></span></div>
-    <div class="bar v" id="bar-${id}" aria-hidden="true"></div>
-    <div class="readout green" id="r-${id}"><span class="digits"><span class="live">--</span></span><span class="unit">${unit}</span></div>
-    <div class="note" id="n-${id}"></div>`;
-  colWrap.appendChild(d);
-  const segs = buildBar(d.querySelector('.bar'), SEGS, i => {
-    const idx = SEGS - 1 - i;                     // top of column = highest value
-    const v = min + (idx + 1) / SEGS * (max - min);
-    if (id === 'volt' || id === 'fuel') return '';
-    return redAt != null && v > redAt ? 'r' : amberAt != null && v > amberAt ? 'a' : '';
-  });
-  colSegs[id] = segs.reverse();                   // index 0 = bottom
-}
+const speedo = dial(document.getElementById('g-speed'), {
+  vb: '0 0 220 220', cx: 110, cy: 110, r: 100, big: true, min: 0, max: 260, a0: -125, a1: 125,
+  major: 20, minor: 5, half: true, label: v => v % 40 === 0 ? v : null, numSize: .15,
+  title: 'km/h', titleY: .33, digital: true, k: 80, zeta: .8,
+});
+const smallCfg = (min, max, major, minor, label, zones, title) => ({
+  vb: '0 0 220 150', cx: 110, cy: 118, r: 92, min, max, a0: -62, a1: 62, major, minor, label, zones,
+  numR: .66, numSize: .16, needleLen: .88, k: 40, zeta: .9, aria: title,
+});
+const gCool = dial(document.getElementById('g-coolant'), smallCfg(50, 130, 40, 10, v => v, [[110, 120, '#ffb000'], [120, 130, '#e3261b']], 'COOLANT'));
+const gOil  = dial(document.getElementById('g-oil'),     smallCfg(50, 150, 50, 10, v => v, [[50, 80, '#2c5d8f'], [130, 150, '#e3261b']], 'OIL °C'));
+const gFuel = dial(document.getElementById('g-fuel'),    smallCfg(0, 100, 50, 12.5, v => v === 0 ? 'E' : v === 100 ? 'F' : '½', [[0, 12, '#e3261b']], 'FUEL'));
+const gVolt = dial(document.getElementById('g-volt'),    smallCfg(10, 16, 2, .5, v => v, [[10, 12, '#e3261b'], [12, 13, '#ffb000']], 'VOLTS'));
+const DIAL = { rpm: tach, speed: speedo, coolant: gCool, oil: gOil, fuel: gFuel, volt: gVolt };
 
-// ---------- render ----------
-function setReadout(id, text, tone) {
-  const el = document.getElementById('r-' + id); if (!el) return;
-  el.querySelector('.live').textContent = text;
-  if (tone) el.className = 'readout ' + tone;
-}
-function fill(segs, frac) {
-  const n = Math.round(Math.max(0, Math.min(1, frac)) * segs.length);
-  segs.forEach((s, i) => s.classList.toggle('lit', i < n));
-}
+// ---------- render a fresh reading ----------
 function render(id) {
   const v = val[id];
-  if (id === 'rpm') { setReadout('rpm', String(Math.round(v)).padStart(4, ' '), v > 5800 ? 'red' : v > 4500 ? 'amber' : 'amber'); fill(rpmSegs, v / RPM_MAX); return; }
-  if (id === 'speed') { setReadout('speed', String(Math.round(v)).padStart(3, ' '), 'red'); return; }
-  if (id === 'iat' || id === 'ambient') { setReadout(id, String(Math.round(v)).padStart(3, ' '), 'green'); return; }
-  if (id === 'mil') { lamps(); return; }
-  const c = COLS.find(x => x[0] === id); if (!c) return;
-  const [, , , min, max, amberAt, redAt, dec, note] = c;
-  let tone = 'green';
-  if (id === 'volt') tone = v < 12.2 || v > 15 ? 'red' : v < 13 ? 'amber' : 'green';
-  else if (id === 'fuel') tone = v <= 15 ? 'amber' : 'green';
-  else if (redAt != null && v >= redAt) tone = 'red'; else if (amberAt != null && v >= amberAt) tone = 'amber';
-  setReadout(id, v.toFixed(dec), tone);
-  if (id === 'volt' || id === 'fuel') colSegs[id].forEach(sg => { sg.classList.toggle('a', tone === 'amber'); sg.classList.toggle('r', tone === 'red'); });
-  fill(colSegs[id], (v - min) / (max - min));
-  document.getElementById('n-' + id).textContent = note(v);
+  if (DIAL[id]) point(DIAL[id], v);
+  const txt = t => document.getElementById('v-' + id) && (document.getElementById('v-' + id).textContent = t);
+  if (id === 'rpm') tach.dig.textContent = String(Math.round(v / 10) * 10);
+  else if (id === 'speed') speedo.dig.textContent = String(Math.round(v));
+  else if (id === 'volt') txt(v.toFixed(1));
+  else if (id === 'mil') { lamps(); return; }
+  else txt(Math.round(v));
   lamps();
 }
 function setLamp(name, cls) { const el = document.querySelector(`[data-lamp="${name}"]`); el.className = 'wlamp' + (cls ? ' ' + cls : ''); }
 function lamps() {
-  if (val.mil != null) { setLamp('mil', (val.mil & 0x80) ? 'crit' : 'ok'); }
+  if (val.mil != null) setLamp('mil', (val.mil & 0x80) ? 'crit' : 'ok');
   if (val.volt != null) setLamp('charge', val.volt < 12.2 ? 'crit' : val.volt < 13 ? 'warn' : 'ok');
-  if (val.coolant != null) setLamp('coolant', val.coolant >= 115 ? 'crit' : val.coolant >= 108 ? 'warn' : 'ok');
+  if (val.coolant != null) setLamp('coolant', val.coolant >= 115 ? 'crit' : val.coolant >= 110 ? 'warn' : 'ok');
   if (val.oil != null) setLamp('oil', val.oil >= 135 ? 'crit' : val.oil < 80 ? 'warn' : 'ok');
   if (val.fuel != null) setLamp('fuel', val.fuel < 12 ? 'warn' : 'ok');
   if (val.mil != null) setLamp('codes', (val.mil & 0x7f) > 0 ? 'warn' : 'ok');
@@ -327,8 +325,14 @@ setInterval(() => {
     const s = Math.round((now - t) / 1000); a.textContent = s <= 1 ? 'LIVE' : s + 's';
   });
   const ok = stats.sent ? Math.round(100 * stats.ok / stats.sent) : 0;
-  document.getElementById('stats').textContent = `REQ ${stats.sent}   OK ${ok}%   ${rate.toFixed(1)} Hz`;
+  document.getElementById('stats').textContent = `REQ ${stats.sent}   OK ${ok}%   ${rate.toFixed(1)} readings/s`;
 }, 500);
+
+// classic needle sweep when the link comes up
+function sweep() {
+  for (const g of gauges) g.target = g.c.a1;
+  setTimeout(() => { for (const g of gauges) g.target = g.c.a0; }, 650);
+}
 
 // ---------- serial / ELM327 (OBDLink MX+) ----------
 const logEl = document.getElementById('log');
@@ -448,7 +452,7 @@ async function poll() {
   if (polling) return; polling = true;
   const slow = PIDS.filter(p => p.id !== 'rpm' && p.id !== 'speed'); let k = 0;
   while (running && !paused) {
-    const batch = [byId.rpm, byId.speed, slow[k % slow.length], byId.rpm]; k++;
+    const batch = [byId.rpm, byId.speed, byId.rpm, slow[k % slow.length], byId.rpm]; k++;   // rpm-heavy so the tach needle tracks the revs
     for (const p of batch) {
       if (!running || paused) break;
       stats.sent++;
@@ -602,6 +606,16 @@ document.getElementById('btnTrip').onclick = () => trip.on ? stopTrip() : startT
   };
   document.querySelector('.top').appendChild(btn);
 })();
+
+// ---------- classic cluster behaviour: sweep on link-up, needles rest at zero when offline ----------
+let wasOn = false;
+const _setConn2 = setConn;
+setConn = function (kind, text) {
+  _setConn2(kind, text);
+  if (kind === 'on' && !wasOn) sweep();
+  if (kind === 'off') { for (const g of gauges) g.target = g.c.a0; tach.dig.textContent = '---'; speedo.dig.textContent = '---'; }
+  wasOn = kind === 'on' || (kind === 'busy' && wasOn);
+};
 </script>
 </body>
 </html>
